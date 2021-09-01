@@ -1,4 +1,4 @@
-# 247 Bot - 24/7 Discord Bot
+# 247 Bot - Discord Radio Bot
 
 247 Bot is a self host Discord Bot written in python. If the Bot runs he is forever in a Voice channel and play the Radio Station you want hear. At three Selected Radio Station that are in Germany recommend you can also see which song is Actually Playing and from who is this Song, you can also see the Cover of the Album (This is made with the Spotify API). The bot is very simple to setup on Linux, just download the reposotory and run ./bot.sh install then you must enter a few infos and the bot is up and running. For an detailed Setup Guid you can go to 
 [247bot.lucasserver.de](https://247bot.lucasserver.de)
