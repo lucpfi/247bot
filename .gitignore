@@ -1,3 +1,4 @@
 botconfig.py
 cache.json
 247bot.code-workspace
+__pycache__/
