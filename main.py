@@ -62,10 +62,53 @@ def writejson(data):
     with open("cache.json", "w") as f:
         json.dump(data, f)
 
+async def play(emoji_func):
+    global setup
+    global emoji
+    global emoji_I
+    global emoji_II
+    global voicechannel
+    global current_station_number
+    global current_station_name
+    if (stations_mapping[emoji_func] != ""):
+        try:
+            voicechannel.play(discord.FFmpegPCMAudio(stations[stations_mapping[emoji_func]]))
+            current_station_name = stations_mapping[emoji_func]
+            current_station_number = emoji_func
+            await songinfos()
+        except:
+            try:
+                voicechannel.stop()
+                voicechannel.play(discord.FFmpegPCMAudio(stations[stations_mapping[emoji_func]]))
+                current_station_name = stations_mapping[emoji_func]
+                current_station_number = emoji_func
+                await songinfos()
+            except:
+                delmsg = await message.channel.send("Please use first /set_voice_channel to connect the Bot to a Voice Channel")
+                await asyncio.sleep(5)
+                await delmsg.delete()
+
+    elif (emoji_func in emoji_II):
+        try:
+            if (readjson(emoji_func) != ""):
+                current_station_name = "Playing custom Radio..."
+                current_station_number = emoji_func
+                await songinfos()
+        
+                try:
+                    voicechannel.play(discord.FFmpegPCMAudio(readjson(emoji_func)))
+                except:
+                    voicechannel.stop()
+                    voicechannel.play(discord.FFmpegPCMAudio(readjson(emoji_func)))
+        except:
+            pass
+
 
 @client.event
 async def on_ready():
     global setup
+    global channel
+    global voicechannel
     print("I'm online!")
     asyncio.create_task(spotifyAuth())
     try:
@@ -77,6 +120,13 @@ async def on_ready():
 
     if (setup == True):
         asyncio.create_task(songinfos_loop())
+        try:
+            voice_channel = readjson("voice_channel")
+            channel = client.get_channel(int(voice_channel))
+            voicechannel = await channel.connect()
+            await play(readjson("playing"))
+        except:
+            pass
 
 
 @client.event
@@ -99,39 +149,12 @@ async def on_raw_reaction_add(payload):
                 channel = client.get_channel(payload.channel_id)
                 message = await channel.fetch_message(payload.message_id)
                 await message.remove_reaction(payload.emoji.name, payload.member)
+                
+                data = readjson("")
+                data['playing'] = payload.emoji.name
+                writejson(data)
 
-                if (stations_mapping[payload.emoji.name] != ""):
-                    try:
-                        voicechannel.play(discord.FFmpegPCMAudio(stations[stations_mapping[payload.emoji.name]]))
-                        current_station_name = stations_mapping[payload.emoji.name]
-                        current_station_number = payload.emoji.name
-                        await songinfos()
-                    except:
-                        try:
-                            voicechannel.stop()
-                            voicechannel.play(discord.FFmpegPCMAudio(stations[stations_mapping[payload.emoji.name]]))
-                            current_station_name = stations_mapping[payload.emoji.name]
-                            current_station_number = payload.emoji.name
-                            await songinfos()
-                        except:
-                            delmsg = await message.channel.send("Please use first /set_voice_channel to connect the Bot to a Voice Channel")
-                            await asyncio.sleep(5)
-                            await delmsg.delete()
-
-                elif (payload.emoji.name in emoji_II):
-                    try:
-                        if (readjson(payload.emoji.name) != ""):
-                            current_station_name = "Playing custom Radio..."
-                            current_station_number = payload.emoji.name
-                            await songinfos()
-                    
-                            try:
-                                voicechannel.play(discord.FFmpegPCMAudio(readjson(payload.emoji.name)))
-                            except:
-                                voicechannel.stop()
-                                voicechannel.play(discord.FFmpegPCMAudio(readjson(payload.emoji.name)))
-                    except:
-                        pass
+                await play(payload.emoji.name)
 
 
             elif (set_radio_station_channel_id.id == payload.message_id):
@@ -351,8 +374,9 @@ async def songinfos():
 async def spotifyAuth():
     global spotifyToken
     while True:
+        print("renew Token")
         spotifyToken = spotify.getAccessToken(cfg.spotify['clientID'], cfg.spotify['clientSecret'])
-        await asyncio.sleep(43200)
+        await asyncio.sleep(60)
 
 
 client.run(cfg.bot['token'])
