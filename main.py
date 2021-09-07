@@ -13,6 +13,7 @@ import asyncio
 import os
 import spotify
 import json
+from datetime import datetime
 
 import botconfig as cfg
 import controllembed as embedcfg
@@ -109,7 +110,7 @@ async def on_ready():
     global setup
     global channel
     global voicechannel
-    print("I'm online!")
+    print("[" + datetime.now().strftime("%H:%M:%S") + "] I'm online!")
     asyncio.create_task(spotifyAuth())
     try:
         readjson("controll_channel")
@@ -176,7 +177,7 @@ async def on_raw_reaction_add(payload):
                         set_radio_station_channel_url = ""
 
         else:
-            print("ERROR: chache.json can't read! Please check the layout")
+            print("[" + datetime.now().strftime("%H:%M:%S") + "] ERROR: chache.json can't read! Please check the layout")
 
 
 @slash.slash(name="ping", guild_ids=cfg.guild_ids, description="Send the Bot Ping")
@@ -374,9 +375,10 @@ async def songinfos():
 async def spotifyAuth():
     global spotifyToken
     while True:
-        print("renew Token")
+        datetime.now().strftime("%H:%M:%S")
+        print("[" + datetime.now().strftime("%H:%M:%S") + "] Renew Spotify Token")
         spotifyToken = spotify.getAccessToken(cfg.spotify['clientID'], cfg.spotify['clientSecret'])
-        await asyncio.sleep(60)
+        await asyncio.sleep(3600)
 
 
 client.run(cfg.bot['token'])
