@@ -2,3 +2,6 @@ botconfig.py
 cache.json
 247bot.code-workspace
 __pycache__/
+logs
+logs2
+screenlog.0

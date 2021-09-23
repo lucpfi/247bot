@@ -14,6 +14,7 @@ import os
 import spotify
 import json
 from datetime import datetime
+import pytz
 
 import botconfig as cfg
 import controllembed as embedcfg
@@ -33,6 +34,12 @@ emoji = "1️⃣, 2️⃣, 3️⃣, 4️⃣, 5️⃣, 6️⃣, 7️⃣"
 emoji_I = "1️⃣, 2️⃣, 3️⃣"
 emoji_II = "4️⃣, 5️⃣, 6️⃣, 7️⃣"
 setup = False
+tz = pytz.timezone('Europe/Berlin')
+
+ffmpeg_options = {
+    'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5',
+    'options': '-vn',
+}
 
 stations_mapping = {
     "1️⃣": "RadioBOB",
@@ -73,14 +80,14 @@ async def play(emoji_func):
     global current_station_name
     if (stations_mapping[emoji_func] != ""):
         try:
-            voicechannel.play(discord.FFmpegPCMAudio(stations[stations_mapping[emoji_func]]))
+            voicechannel.play(discord.FFmpegPCMAudio(stations[stations_mapping[emoji_func]], **ffmpeg_options))
             current_station_name = stations_mapping[emoji_func]
             current_station_number = emoji_func
             await songinfos()
         except:
             try:
                 voicechannel.stop()
-                voicechannel.play(discord.FFmpegPCMAudio(stations[stations_mapping[emoji_func]]))
+                voicechannel.play(discord.FFmpegPCMAudio(stations[stations_mapping[emoji_func]], **ffmpeg_options))
                 current_station_name = stations_mapping[emoji_func]
                 current_station_number = emoji_func
                 await songinfos()
@@ -95,12 +102,12 @@ async def play(emoji_func):
                 current_station_name = "Playing custom Radio..."
                 current_station_number = emoji_func
                 await songinfos()
-        
+
                 try:
-                    voicechannel.play(discord.FFmpegPCMAudio(readjson(emoji_func)))
+                    voicechannel.play(discord.FFmpegPCMAudio(readjson(emoji_func), **ffmpeg_options))
                 except:
                     voicechannel.stop()
-                    voicechannel.play(discord.FFmpegPCMAudio(readjson(emoji_func)))
+                    voicechannel.play(discord.FFmpegPCMAudio(readjson(emoji_func), **ffmpeg_options))
         except:
             pass
 
@@ -110,7 +117,8 @@ async def on_ready():
     global setup
     global channel
     global voicechannel
-    print("[" + datetime.now().strftime("%H:%M:%S") + "] I'm online!")
+    print("[" + datetime.now(tz).strftime("%H:%M:%S") + "] I'm online!")
+    asyncio.create_task(cleaning())
     asyncio.create_task(spotifyAuth())
     try:
         readjson("controll_channel")
@@ -177,7 +185,7 @@ async def on_raw_reaction_add(payload):
                         set_radio_station_channel_url = ""
 
         else:
-            print("[" + datetime.now().strftime("%H:%M:%S") + "] ERROR: chache.json can't read! Please check the layout")
+            print("[" + datetime.now(tz).strftime("%H:%M:%S") + "] ERROR: chache.json can't read! Please check the layout")
 
 
 @slash.slash(name="ping", guild_ids=cfg.guild_ids, description="Send the Bot Ping")
@@ -376,9 +384,19 @@ async def spotifyAuth():
     global spotifyToken
     while True:
         datetime.now().strftime("%H:%M:%S")
-        print("[" + datetime.now().strftime("%H:%M:%S") + "] Renew Spotify Token")
+        print("[" + datetime.now(tz).strftime("%H:%M:%S") + "] Renew Spotify Token")
         spotifyToken = spotify.getAccessToken(cfg.spotify['clientID'], cfg.spotify['clientSecret'])
         await asyncio.sleep(3600)
 
+
+async def cleaning():
+    global current_station_number
+    while True:
+        if (int(datetime.now(tz).strftime("%H")) >= 4 and int(datetime.now(tz).strftime("%H")) <= 5):           #Restart Playing between 4 and 5 am.
+            play(current_station_number)
+            print("[" + datetime.now(tz).strftime("%H:%M:%S") + "] Cleaning up!")
+        
+        await asyncio.sleep(3600)
+    
 
 client.run(cfg.bot['token'])

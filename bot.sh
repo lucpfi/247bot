@@ -48,7 +48,7 @@ then
 elif [[ "$1" == "start" ]]
 then
     echo "Starting the Bot..."
-    screen -AmdS discord-bot python3 main.py
+    screen -AmdS discord-bot -L python3 main.py
     echo "The bot is in a few seconds Online"
 elif [[ "$1" == "stop" ]]
 then
